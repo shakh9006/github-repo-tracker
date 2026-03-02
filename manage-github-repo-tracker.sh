@@ -3,6 +3,8 @@
 # 
 # This script orchestrates the startup and shutdown of a complete GitHub Repo Tracker stack:
 # - Airflow (Workflow orchestrator)
+# - Minio (Object storage)
+# - Nessie (Version control)
 # Usage: ./manage-github-repo-tracker.sh [start|stop|stop-and-clean-up]
 
 set -e  # Exit immediately if any command fails
@@ -29,10 +31,17 @@ start_services() {
     docker compose -f ./airflow/docker-compose.yaml up -d --build
     sleep 5  # Allow services to initialize
 
+    # Step 2: Start the storage services (Minio and Nessie)
+    echo "Starting storage services (Minio and Nessie)..."
+    docker compose -f ./storage/docker-compose.yaml up -d --build
+    sleep 5  # Allow services to initialize
+
     echo "All services started successfully."
     echo ""
     echo "Service Access Information:"
     echo "  - Airflow: http://localhost:8080"
+    echo "  - Minio: http://localhost:9000"
+    echo "  - Nessie: http://localhost:19120"
     echo ""
 }
 
@@ -43,11 +52,21 @@ stop_and_clean_up_services() {
     # Change to script directory
     cd "$SCRIPT_DIR"
     
-    # Stop services in reverse order (Airflow)
+    # Step1: Stop services in reverse order (Airflow)
     echo "Stopping airflow services..."
     docker compose -f ./airflow/docker-compose.yaml down -v
 
+    # Step 2: Stop the storage services (Minio and Nessie)
+    echo "Stopping storage services (Minio and Nessie)..."
+    docker compose -f ./storage/docker-compose.yaml down -v
+
+    # Step 3: Stop the network
+    echo "Stopping network..."
+    docker network rm github-repo-tracker
+
     echo "All services stopped and volumes cleaned up."
+    echo ""
+    echo "Network removed."
     echo ""
 }
 
@@ -58,9 +77,13 @@ stop_services() {
     # Change to script directory
     cd "$SCRIPT_DIR"
     
-    # Stop services in reverse order (Airflow)
+    # Step1: Stop services in reverse order (Airflow)
     echo "Stopping airflow services..."
     docker compose -f ./airflow/docker-compose.yaml down
+
+    # Step 2: Stop the storage services (Minio and Nessie)
+    echo "Stopping storage services (Minio and Nessie)..."
+    docker compose -f ./storage/docker-compose.yaml down -v
 
     echo "All services stopped."
     echo ""
@@ -83,7 +106,7 @@ case "${1:-help}" in
         echo "Usage: $0 [start|stop|stop-and-clean-up]"
         echo ""
         echo "Commands:"
-        echo "  start    Start all services (Airflow)"
+        echo "  start    Start all services (Airflow, Minio, Nessie)"
         echo "  stop     Stop all services"
         echo "  stop-and-clean-up     Stop all services and clean up volumes"
         echo ""
@@ -94,5 +117,7 @@ case "${1:-help}" in
         echo ""
         echo "After starting, you can access:"
         echo "  - Airflow: http://localhost:8080"
+        echo "  - Minio: http://localhost:9000"
+        echo "  - Nessie: http://localhost:19120"
         ;;
 esac
