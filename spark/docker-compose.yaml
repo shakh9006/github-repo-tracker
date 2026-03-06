@@ -1,0 +1,71 @@
+services:
+  spark-master:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: spark-master
+    hostname: spark-master
+    ports:
+      - 7077:7077
+      - 8088:8088
+    networks:
+      - github-repo-tracker
+    environment:
+      - SPARK_MODE=${SPARK_MASTER_MODE}
+      - SPARK_MASTER_HOST=${SPARK_MASTER_HOST}
+      - SPARK_MASTER_PORT=${SPARK_MASTER_PORT}
+      - SPARK_MASTER_WEBUI_PORT=${SPARK_MASTER_WEBUI_PORT}
+      - AWS_ACCESS_KEY_ID=${MINIO_ROOT_USER}
+      - AWS_SECRET_ACCESS_KEY=${MINIO_ROOT_PASSWORD}
+      - AWS_REGION=${MINIO_REGION}
+      - AWS_S3_ENDPOINT=${MINIO_ENDPOINT_URL}
+      - WAREHOUSE=${S3_BUCKET}
+      - NESSIE_URI=${NESSIE_URI}
+      - MINIO_REGION=${MINIO_REGION}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+      - PYSPARK_PYTHON=${PYSPARK_PYTHON}
+      - AIRFLOW_CONN_SPARK_DEFAULT=spark://spark-master:7077
+    entrypoint: >
+      sh -c "
+        sleep 15 &&
+        /opt/spark/sbin/start-master.sh &&
+        tail -f /opt/spark/logs/spark-*-org.apache.spark.deploy.master.Master-*.out
+      "
+
+  spark-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: spark-worker
+    hostname: spark-worker
+    environment:
+      - SPARK_MODE=${SPARK_WORKER_MODE}
+      - SPARK_MASTER_URL=${SPARK_MASTER_URL}
+      - SPARK_WORKER_CORES=4
+      - SPARK_WORKER_MEMORY=8G
+      - AWS_ACCESS_KEY_ID=${MINIO_ROOT_USER}
+      - AWS_SECRET_ACCESS_KEY=${MINIO_ROOT_PASSWORD}
+      - AWS_REGION=${MINIO_REGION}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+      - AWS_S3_ENDPOINT=${MINIO_ENDPOINT_URL}
+      - WAREHOUSE=${S3_BUCKET}
+      - NESSIE_URI=${NESSIE_URI}
+      - MINIO_REGION=${MINIO_REGION}
+      - PYSPARK_PYTHON=${PYSPARK_PYTHON}
+      - AIRFLOW_CONN_SPARK_DEFAULT=spark://spark-master:7077
+    ports:
+      - '8081:8081'
+    depends_on:
+      - spark-master
+    networks:
+      - github-repo-tracker
+    entrypoint: >
+      sh -c "
+        sleep 20 &&
+        /opt/spark/sbin/start-worker.sh spark://spark-master:7077 &&
+        tail -f /opt/spark/logs/spark-*-org.apache.spark.deploy.worker.Worker-*.out
+      "
+
+networks:
+  github-repo-tracker:
+    external: true
