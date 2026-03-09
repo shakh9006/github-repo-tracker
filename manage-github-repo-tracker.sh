@@ -5,6 +5,8 @@
 # - Airflow (Workflow orchestrator)
 # - Minio (Object storage)
 # - Nessie (Version control)
+# - Spark (Data processing)
+# - Trino (Data warehouse)
 # Usage: ./manage-github-repo-tracker.sh [start|stop|stop-and-clean-up]
 
 set -e  # Exit immediately if any command fails
@@ -36,12 +38,24 @@ start_services() {
     docker compose -f ./storage/docker-compose.yaml up -d --build
     sleep 5  # Allow services to initialize
 
+    # Step 3: Start the spark services (Spark)
+    echo "Starting spark services (Spark)..."
+    docker compose -f ./spark/docker-compose.yaml up -d --build
+    sleep 5  # Allow services to initialize
+
+    # Step 4: Start the trino services (Trino)
+    echo "Starting trino services (Trino)..."
+    docker compose -f ./trino/docker-compose.yaml up -d --build
+    sleep 5  # Allow services to initialize
+
     echo "All services started successfully."
     echo ""
     echo "Service Access Information:"
-    echo "  - Airflow: http://localhost:8080"
+    echo "  - Airflow: http://localhost:8085"
     echo "  - Minio: http://localhost:9000"
     echo "  - Nessie: http://localhost:19120"
+    echo "  - Spark: http://localhost:8081"
+    echo "  - Trino: http://localhost:8080"
     echo ""
 }
 
@@ -60,7 +74,15 @@ stop_and_clean_up_services() {
     echo "Stopping storage services (Minio and Nessie)..."
     docker compose -f ./storage/docker-compose.yaml down -v
 
-    # Step 3: Stop the network
+    # Step 3: Stop the spark services (Spark)
+    echo "Stopping spark services (Spark)..."
+    docker compose -f ./spark/docker-compose.yaml down -v
+
+    # Step 4: Stop the trino services (Trino)
+    echo "Stopping trino services (Trino)..."
+    docker compose -f ./trino/docker-compose.yaml down -v
+
+    # Step 5: Stop the network
     echo "Stopping network..."
     docker network rm github-repo-tracker
 
@@ -83,7 +105,15 @@ stop_services() {
 
     # Step 2: Stop the storage services (Minio and Nessie)
     echo "Stopping storage services (Minio and Nessie)..."
-    docker compose -f ./storage/docker-compose.yaml down -v
+    docker compose -f ./storage/docker-compose.yaml down
+
+    # Step 3: Stop the spark services (Spark)
+    echo "Stopping spark services (Spark)..."
+    docker compose -f ./spark/docker-compose.yaml down
+
+    # Step 4: Stop the trino services (Trino)
+    echo "Stopping trino services (Trino)..."
+    docker compose -f ./trino/docker-compose.yaml down
 
     echo "All services stopped."
     echo ""
@@ -106,7 +136,7 @@ case "${1:-help}" in
         echo "Usage: $0 [start|stop|stop-and-clean-up]"
         echo ""
         echo "Commands:"
-        echo "  start    Start all services (Airflow, Minio, Nessie)"
+        echo "  start    Start all services (Airflow, Minio, Nessie, Spark, Trino)"
         echo "  stop     Stop all services"
         echo "  stop-and-clean-up     Stop all services and clean up volumes"
         echo ""
@@ -116,8 +146,10 @@ case "${1:-help}" in
         echo "  $0 stop-and-clean-up     # Stop all services and clean up volumes"
         echo ""
         echo "After starting, you can access:"
-        echo "  - Airflow: http://localhost:8080"
+        echo "  - Airflow: http://localhost:8085"
         echo "  - Minio: http://localhost:9000"
         echo "  - Nessie: http://localhost:19120"
+        echo "  - Spark: http://localhost:8081"
+        echo "  - Trino: http://localhost:8080"
         ;;
 esac

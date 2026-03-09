@@ -13,7 +13,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-BACKOFF_SECONDS = [5, 10, 20]
+BACKOFF_SECONDS = [15, 30, 60]
 MAX_RETRIES = 3
 REQUEST_TIMEOUT = 10
 
@@ -82,21 +82,14 @@ def get_github_repos(logical_date):
     s3_key = f"github_repos_temp/data_{logical_date.strftime("%Y-%m-%d-%H-%M-%S")}.json"
 
     body = json.dumps(repos, ensure_ascii=False).encode("utf-8")
-    # s3 = boto3.client("s3",
-    #     endpoint_url=os.getenv("MINIO_ENDPOINT_URL"),
-    #     region_name=os.getenv("AWS_REGION"),
-    #     aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
-    #     aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
-    #     config=Config(signature_version="s3v4"),
-    # )
-
     s3 = boto3.client("s3",
-        endpoint_url="http://minio:9000",
-        region_name="us-east-1",
-        aws_access_key_id="tAWhZbyU4CzL15TKPJEg",
-        aws_secret_access_key="3fnNJ0fFpzpDo4tzmZMM7RiyuiKMI8c9YS4iVZiM",
+        endpoint_url=os.getenv("MINIO_ENDPOINT_URL"),
+        region_name=os.getenv("AWS_REGION"),
+        aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+        aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
         config=Config(signature_version="s3v4"),
     )
+
 
     s3.put_object(
         Bucket=os.getenv("S3_BUCKET_NAME"),
@@ -107,4 +100,4 @@ def get_github_repos(logical_date):
 
     logger.info("Uploaded to S3: %s", os.getenv("S3_BUCKET_NAME"))
 
-    return s3_key
+    return f"s3a://{os.getenv('S3_BUCKET_NAME')}/{s3_key}"

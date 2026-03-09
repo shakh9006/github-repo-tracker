@@ -1,0 +1,12 @@
+github_repo_tracker:
+  outputs:
+    iceberg_output:
+      type: trino
+      method: none
+      user: trino
+      database: iceberg
+      host: trino-coordinator
+      port: 8080
+      schema: raw
+      threads: 2
+  target: iceberg_output

@@ -1,0 +1,65 @@
+import subprocess
+from airflow.exceptions import AirflowException
+from airflow.sdk import BaseOperator
+from dbt.cli.main import dbtRunner, dbtRunnerResult
+import logging
+
+logger = logging.getLogger(__name__)
+
+class DbtCoreOperator(BaseOperator):
+    def __init__(
+        self,
+        dbt_project_dir: str,
+        dbt_profiles_dir: str,
+        dbt_command: str,
+        target: str = None,
+        select: str = None,
+        dbt_vars: dict = None,
+        full_refresh: bool = False,
+        **kwargs,
+    ) -> None:
+        logger.info("DbtCoreOperator initialized")
+        super().__init__(**kwargs)
+        self.dbt_command = dbt_command
+        self.dbt_project_dir = dbt_project_dir
+        self.dbt_profiles_dir = dbt_profiles_dir
+        self.target = target
+        self.select = select
+        self.dbt_vars = dbt_vars or {}
+        self.full_refresh = full_refresh
+
+    def execute(self, context):
+        logger.info("=" * 60)
+        logger.info("Executing dbt command")
+        logger.info(f"Project: {self.dbt_project_dir}")
+        logger.info(f"Command: {self.dbt_command}")
+        
+        command_args = [
+            self.dbt_command,
+            "--profiles-dir", self.dbt_profiles_dir,
+            "--project-dir", self.dbt_project_dir
+        ]
+        
+        if self.target:
+            command_args.extend(["--target", self.target])
+            
+        if self.select:
+            command_args.extend(["--select", self.select])
+            logger.info(f"Select: {self.select}")
+
+        if self.full_refresh:
+            command_args.extend(["--full-refresh"])
+        
+        if self.dbt_vars:
+            vars_string = " ".join([f"{k}: {v}" for k, v in self.dbt_vars.items()])
+            command_args.extend(["--vars", f"'{vars_string}'"])
+
+        logger.info("Full command: %s", " ".join(command_args))
+        
+        self.runner = dbtRunner() 
+        result = self.runner.invoke(command_args)
+
+        if not result.success:
+            raise AirflowException(f"dbt failed: {result.exception}")
+
+        return {"success": True}

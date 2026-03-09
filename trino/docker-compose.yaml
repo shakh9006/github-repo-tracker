@@ -1,0 +1,32 @@
+services:
+  trino-coordinator:
+    image: trinodb/trino:latest
+    container_name: trino-coordinator
+    ports:
+      - '8080:8080'
+    networks:
+      - github-repo-tracker
+    volumes:
+      - ./config/coordinator/config.properties:/etc/trino/config.properties
+      - ./config/catalog:/etc/trino/catalog
+    env_file:
+      - .env
+
+  trino-worker:
+    image: trinodb/trino:latest
+    container_name: trino-worker-1
+    ports:
+      - '8082:8080'
+    networks:
+      - github-repo-tracker
+    volumes:
+      - ./config/worker/config.properties:/etc/trino/config.properties
+      - ./config/catalog:/etc/trino/catalog
+    env_file:
+      - .env
+    depends_on:
+      - trino-coordinator
+
+networks:
+  github-repo-tracker:
+    external: true
