@@ -1,0 +1,30 @@
+version: 2
+
+sources:
+  - name: raw
+    description: Raw Github repository payloads ingested from Github API
+    database: iceberg
+    schema: raw
+    tables:
+      - name: github_repositories_raw
+        description: One row per ingested repository record, stored as JSON in the raw_payload
+        loaded_at_field: _ingested_at
+        columns:
+          - name: _source_file
+            description: S3 path
+            tests:
+              - not_null
+              - unique
+          - name: _batch_id
+            description: Batch Identifier
+            tests:
+              - not_null
+              - unique
+          - name: _ingested_at
+            description: Timestamp of ingestion
+            tests:
+              - not_null
+          - name: raw_payload
+            description: JSON payload of the repository record
+            tests:
+              - not_null

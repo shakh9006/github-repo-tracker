@@ -57,4 +57,9 @@ class DbtCoreOperator(BaseOperator):
         logger.info("Full command: %s", " ".join(command_args))
         
         self.runner = dbtRunner() 
-        return self.runner.invoke(command_args)
+        result = self.runner.invoke(command_args)
+
+        if not result.success:
+            raise AirflowException(f"dbt failed: {result.exception}")
+
+        return {"success": True}
