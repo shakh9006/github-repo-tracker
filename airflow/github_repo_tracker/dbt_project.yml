@@ -21,6 +21,9 @@ clean-targets: # directories to be removed by `dbt clean`
   - 'target'
   - 'dbt_packages'
 
+on-run-start:
+  - 'create schema if not exists {{ target.database }}.snapshots'
+
 # Configuring models
 # Full documentation: https://docs.getdbt.com/docs/configuring-models
 
@@ -29,6 +32,7 @@ clean-targets: # directories to be removed by `dbt clean`
 # files using the `{{ config(...) }}` macro.
 models:
   github_repo_tracker:
+    +views_enabled: false
     bronze:
       +schema: bronze
       +materialized: incremental
@@ -38,3 +42,7 @@ models:
     gold:
       +schema: gold
       +materialized: table
+
+snapshots:
+  github_repo_tracker:
+    +schema: snapshots

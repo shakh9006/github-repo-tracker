@@ -7,6 +7,7 @@
 # - Nessie (Version control)
 # - Spark (Data processing)
 # - Trino (Data warehouse)
+# - Metabase (Data visualization)
 # Usage: ./manage-github-repo-tracker.sh [start|stop|stop-and-clean-up]
 
 set -e  # Exit immediately if any command fails
@@ -48,6 +49,11 @@ start_services() {
     docker compose -f ./trino/docker-compose.yaml up -d --build
     sleep 5  # Allow services to initialize
 
+    # Step 5: Start the metabase services (Metabase)
+    echo "Starting metabase services (Metabase)..."
+    docker compose -f ./metabase/docker-compose.yaml up -d --build
+    sleep 5  # Allow services to initialize
+
     echo "All services started successfully."
     echo ""
     echo "Service Access Information:"
@@ -56,6 +62,7 @@ start_services() {
     echo "  - Nessie: http://localhost:19120"
     echo "  - Spark: http://localhost:8081"
     echo "  - Trino: http://localhost:8080"
+    echo "  - Metabase: http://localhost:3000"
     echo ""
 }
 
@@ -81,6 +88,10 @@ stop_and_clean_up_services() {
     # Step 4: Stop the trino services (Trino)
     echo "Stopping trino services (Trino)..."
     docker compose -f ./trino/docker-compose.yaml down -v
+
+    # Step 5: Stop the metabase services (Metabase)
+    echo "Stopping metabase services (Metabase)..."
+    docker compose -f ./metabase/docker-compose.yaml down -v
 
     # Step 5: Stop the network
     echo "Stopping network..."
@@ -115,6 +126,10 @@ stop_services() {
     echo "Stopping trino services (Trino)..."
     docker compose -f ./trino/docker-compose.yaml down
 
+    # Step 5: Stop the metabase services (Metabase)
+    echo "Stopping metabase services (Metabase)..."
+    docker compose -f ./metabase/docker-compose.yaml down
+
     echo "All services stopped."
     echo ""
 }
@@ -136,7 +151,7 @@ case "${1:-help}" in
         echo "Usage: $0 [start|stop|stop-and-clean-up]"
         echo ""
         echo "Commands:"
-        echo "  start    Start all services (Airflow, Minio, Nessie, Spark, Trino)"
+        echo "  start    Start all services (Airflow, Minio, Nessie, Spark, Trino, Metabase)"
         echo "  stop     Stop all services"
         echo "  stop-and-clean-up     Stop all services and clean up volumes"
         echo ""
@@ -151,5 +166,6 @@ case "${1:-help}" in
         echo "  - Nessie: http://localhost:19120"
         echo "  - Spark: http://localhost:8081"
         echo "  - Trino: http://localhost:8080"
+        echo "  - Metabase: http://localhost:3000"
         ;;
 esac

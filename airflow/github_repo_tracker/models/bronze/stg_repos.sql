@@ -2,7 +2,8 @@
     config(
         materialized='incremental',
         incremental_strategy='append',
-        on_schema_change='sync_all_columns'
+        on_schema_change='sync_all_columns',
+        views_enabled=false
     )
 }}
 
@@ -44,9 +45,7 @@ parsed as (
         from_iso8601_timestamp(json_extract_scalar(raw_payload, '$.pushed_at')) as pushed_at,
 
         cast(json_extract_scalar(raw_payload, '$.archived') as boolean) as is_archived,
-        cast(json_extract_scalar(raw_payload, '$.fork') as boolean) as is_fork,
-
-        json_extract_scalar(raw_payload, '$.topics') as topics_json
+        cast(json_extract_scalar(raw_payload, '$.fork') as boolean) as is_fork
 
     from src
     where json_extract_scalar(raw_payload, '$.id') is not null
@@ -85,6 +84,5 @@ select
     updated_at,
     pushed_at,
     is_archived,
-    is_fork,
-    topics_json
+    is_fork
 from dedup
