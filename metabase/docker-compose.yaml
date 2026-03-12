@@ -1,0 +1,16 @@
+services:
+  metabase:
+    image: metabase/metabase:v0.55.13
+    ports:
+      - '3000:3000'
+    volumes:
+      - metabase_data:/opt/airflow/metabase-data
+    networks:
+      - github-repo-tracker
+
+networks:
+  github-repo-tracker:
+    external: true
+
+volumes:
+  metabase_data:
